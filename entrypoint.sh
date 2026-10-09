@@ -2,7 +2,7 @@
 # ===========================================
 # Xray VLESS Client Container for MikroTik
 # Supports: TCP+Reality+Vision, XHTTP+Reality, gRPC+Reality, WS, H2
-# Version: 3.3.1
+# Version: 3.3.2
 # ===========================================
 
 # Tunnel settings
@@ -45,8 +45,18 @@ GRPC_MULTI_MODE="${GRPC_MULTI_MODE:-false}"
 # Parse VLESS URL if provided
 if [ -n "$VLESS_URL" ]; then
     echo "[INFO] Parsing VLESS URL..."
-    url="${VLESS_URL#vless://}"
+    # strip \r \n \t and any garbage before vless:// (spaces, quotes, BOM, zero-width)
+    VLESS_URL=$(printf '%s' "$VLESS_URL" | tr -d '\r\n\t')
+    case "$VLESS_URL" in
+        *[Vv][Ll][Ee][Ss][Ss]://*) url="${VLESS_URL#*://}" ;;
+        *) echo "[ERROR] VLESS_URL does not contain vless://"; exit 1 ;;
+    esac
+    url="${url%\"}"; url="${url%\'}"
     ID="${url%%@*}"
+    case "$ID" in
+        ""|*://*|*[[:space:]]*|*\"*)
+            echo "[ERROR] Cannot extract UUID from VLESS_URL: '$ID'"; exit 1 ;;
+    esac
     rest="${url#*@}"
     addr_port="${rest%%[\?#]*}"
     REMOTE_ADDRESS="${addr_port%:*}"
@@ -72,7 +82,8 @@ if [ -n "$VLESS_URL" ]; then
                     sid|shortId) SHORT_ID="$value" ;;
                     spx) SPIDERX="$value" ;;
                     path) XHTTP_PATH="$value" ;;
-                    mode) XHTTP_MODE="$value" ;;
+                    mode) XHTTP_MODE="$value"
+                          [ "$value" = "multi" ] && GRPC_MULTI_MODE=true ;;
                     # gRPC specific parameters
                     serviceName) GRPC_SERVICE_NAME="$value" ;;
                     authority) GRPC_AUTHORITY="$value" ;;
@@ -219,10 +230,11 @@ run() {
   [ "$SECURITY" = "tls" ] && TRANSPORT_DISPLAY="${TRANSPORT_DISPLAY}+TLS"
 
   echo "========================================="
-  echo "Xray VLESS Client v3.3.1"
+  echo "Xray VLESS Client v3.3.2"
   echo "-----------------------------------------"
   echo "Transport: ${TRANSPORT_DISPLAY}"
   echo "Server:    ${REMOTE_ADDRESS}:${REMOTE_PORT}"
+  echo "UUID:      $(printf '%s' "$ID" | cut -c1-8)..."
   echo "SNI:       ${SERVER_NAME}"
   [ -n "$FLOW" ] && echo "Flow:      ${FLOW}"
   [ "$TRANSPORT" = "grpc" ] && echo "Service:   ${GRPC_SERVICE_NAME:-(empty)}"
