@@ -21,3 +21,6 @@
 - **H2:** транспорт удалён из Xray-core, `type=h2` теперь мапится на XHTTP `mode=stream-one` (сервер должен быть XHTTP).
 - hev-socks5-tunnel: `log-file: stderr` (с 2.17 логи без него отключены).
 - Добавлен `xray-config-test`: проверка конфигов всех транспортов через `xray run -test`.
+
+## 3.4.0-xray26.9.9-dev — 2026-10-12
+- Экспериментальная сборка на Xray-core v26.9.9 (pre-release). Остальное как в 3.4.0-dev.

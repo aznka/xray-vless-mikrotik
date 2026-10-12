@@ -2,7 +2,7 @@
 ARG BASE=aznka/xray-vless-mikrotik-arm64:3.3.1@sha256:ee57a06ee548a8b2418b4de958a2d61dcd981947baf02ce304b264a51793e3a3
 
 FROM --platform=$BUILDPLATFORM alpine:3.21 AS fetch
-ARG XRAY_VERSION=26.3.27
+ARG XRAY_VERSION=26.9.9
 ARG HEV_VERSION=2.18.0
 RUN apk add --no-cache wget unzip
 WORKDIR /dl
