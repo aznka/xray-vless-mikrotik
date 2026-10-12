@@ -15,3 +15,9 @@
 
 ## 3.3.1
 - Исходная версия (образ `sha256:ee57a06e…`).
+
+## 3.4.0-dev — 2026-10-12
+- Xray-core 24.12.18 → 26.3.27, hev-socks5-tunnel 2.7.4 → 2.18.0, обновлены geoip/geosite.
+- **H2:** транспорт удалён из Xray-core, `type=h2` теперь мапится на XHTTP `mode=stream-one` (сервер должен быть XHTTP).
+- hev-socks5-tunnel: `log-file: stderr` (с 2.17 логи без него отключены).
+- Добавлен `xray-config-test`: проверка конфигов всех транспортов через `xray run -test`.

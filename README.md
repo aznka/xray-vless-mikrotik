@@ -18,7 +18,7 @@ Docker Hub: [`aznka/xray-vless-mikrotik-arm64`](https://hub.docker.com/r/aznka/x
 | XHTTP | `xhttp` | reality | да | рекомендуется |
 | gRPC | `grpc` | reality / tls | да | `serviceName`, `authority`, `mode=multi` |
 | WebSocket | `ws` | tls | да | совместим с CDN |
-| H2 | `h2` | reality / tls | да | |
+| H2 → XHTTP | `h2` | reality / tls | да | с 3.4.0 мапится на XHTTP `stream-one`: H2 удалён из Xray-core, сервер должен быть XHTTP |
 | HTTPUpgrade | `httpupgrade` | tls | да | совместим с CDN |
 
 ## Быстрый старт на MikroTik

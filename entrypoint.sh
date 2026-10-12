@@ -2,7 +2,7 @@
 # ===========================================
 # Xray VLESS Client Container for MikroTik
 # Supports: TCP+Reality+Vision, XHTTP+Reality, gRPC+Reality, WS, H2
-# Version: 3.3.2
+# Version: 3.4.0
 # ===========================================
 
 # Tunnel settings
@@ -102,6 +102,7 @@ fi
 config_file() {
   cat > /hs5t.yml << HEVEOF
 misc:
+  log-file: stderr
   log-level: '${LOG_LEVEL}'
 tunnel:
   name: '${TUN}'
@@ -192,8 +193,10 @@ config_file_xray() {
       STREAM="\"network\":\"ws\",\"wsSettings\":{\"path\":\"${WS_PATH}\"},${SEC_SETTINGS}"
       ;;
     h2|http)
+      # Xray-core removed the HTTP/2 transport (migrated to XHTTP stream-one H2/H3)
+      echo "[WARN] type=h2 is no longer supported by Xray-core, using XHTTP mode=stream-one (server must be XHTTP too)"
       H2_PATH="${XHTTP_PATH:-/}"
-      STREAM="\"network\":\"h2\",\"httpSettings\":{\"path\":\"${H2_PATH}\"},${SEC_SETTINGS}"
+      STREAM="\"network\":\"xhttp\",\"xhttpSettings\":{\"path\":\"${H2_PATH}\",\"mode\":\"stream-one\"},${SEC_SETTINGS}"
       ;;
     httpupgrade)
       HU_PATH="${XHTTP_PATH:-/}"
@@ -222,7 +225,7 @@ run() {
       fi
       ;;
     ws|websocket) TRANSPORT_DISPLAY="WebSocket" ;;
-    h2|http) TRANSPORT_DISPLAY="H2" ;;
+    h2|http) TRANSPORT_DISPLAY="XHTTP(stream-one, from h2)" ;;
     httpupgrade) TRANSPORT_DISPLAY="HTTPUpgrade" ;;
     *) TRANSPORT_DISPLAY="${TRANSPORT}" ;;
   esac
@@ -230,7 +233,7 @@ run() {
   [ "$SECURITY" = "tls" ] && TRANSPORT_DISPLAY="${TRANSPORT_DISPLAY}+TLS"
 
   echo "========================================="
-  echo "Xray VLESS Client v3.3.2"
+  echo "Xray VLESS Client v3.4.0"
   echo "-----------------------------------------"
   echo "Transport: ${TRANSPORT_DISPLAY}"
   echo "Server:    ${REMOTE_ADDRESS}:${REMOTE_PORT}"
