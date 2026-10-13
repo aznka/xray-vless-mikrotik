@@ -2,7 +2,7 @@
 # ===========================================
 # Xray VLESS Client Container for MikroTik
 # Supports: TCP+Reality+Vision, XHTTP+Reality, gRPC+Reality, WS, H2
-# Version: 3.4.0-xray26.9.9
+# Version: 3.4.0
 # ===========================================
 
 # Tunnel settings
@@ -233,7 +233,7 @@ run() {
   [ "$SECURITY" = "tls" ] && TRANSPORT_DISPLAY="${TRANSPORT_DISPLAY}+TLS"
 
   echo "========================================="
-  echo "Xray VLESS Client v3.4.0-xray26.9.9"
+  echo "Xray VLESS Client v3.4.0"
   echo "-----------------------------------------"
   echo "Transport: ${TRANSPORT_DISPLAY}"
   echo "Server:    ${REMOTE_ADDRESS}:${REMOTE_PORT}"

@@ -3,23 +3,36 @@
 VLESS-клиент (Xray-core) в контейнере для **MikroTik RouterOS 7.x на ARM64** (hAP ax³, RB5009 и др.).
 Трафик заворачивается в TUN через hev-socks5-tunnel и уходит на VLESS-сервер.
 
-Docker Hub: [`aznka/xray-vless-mikrotik-arm64`](https://hub.docker.com/r/aznka/xray-vless-mikrotik-arm64)
+Docker Hub: [`aznka/xray-vless-mikrotik-arm64`](https://hub.docker.com/r/aznka/xray-vless-mikrotik-arm64) ·
+GitHub: [`aznka/xray-vless-mikrotik`](https://github.com/aznka/xray-vless-mikrotik)
 
-## Возможности
+## Состав (3.4.0)
 
-- Транспорты: TCP+Vision, XHTTP (SplitHTTP), gRPC, WebSocket, H2, HTTPUpgrade
-- Безопасность: Reality и TLS
-- Автоматический разбор share-ссылки `vless://…` из переменной `VLESS_URL`
-- Xray-core, hev-socks5-tunnel, Alpine Linux
+| Компонент | Версия |
+|---|---|
+| Xray-core | 26.9.9 |
+| hev-socks5-tunnel | 2.18.0 |
+| База | Alpine 3.21 |
+
+## Теги образа
+
+| Тег | Что это |
+|---|---|
+| `latest` | текущий релиз (3.4.0) |
+| `v3.3.2` | предыдущий релиз (Xray 24.12.18), для отката |
+| `dev` | тестовая сборка на стабильном Xray 26.3.27 |
+| `dev-xray26.9.9` | тестовая сборка на Xray 26.9.9 |
+
+## Транспорты
 
 | Транспорт | `type=` | Security | UDP | Примечание |
 |---|---|---|---|---|
 | TCP + Vision | `tcp` | reality | нет | `flow=xtls-rprx-vision` |
-| XHTTP | `xhttp` | reality | да | рекомендуется |
-| gRPC | `grpc` | reality / tls | да | `serviceName`, `authority`, `mode=multi` |
-| WebSocket | `ws` | tls | да | совместим с CDN |
-| H2 → XHTTP | `h2` | reality / tls | да | с 3.4.0 мапится на XHTTP `stream-one`: H2 удалён из Xray-core, сервер должен быть XHTTP |
-| HTTPUpgrade | `httpupgrade` | tls | да | совместим с CDN |
+| XHTTP | `xhttp` | reality / tls | да | **рекомендуется** |
+| gRPC | `grpc` | reality / tls | да | `serviceName`, `authority`, `mode=multi`. В Xray помечен deprecated: переходите на XHTTP |
+| WebSocket | `ws` | tls | да | совместим с CDN, legacy |
+| HTTPUpgrade | `httpupgrade` | tls | да | совместим с CDN, legacy |
+| H2 → XHTTP | `h2` | reality / tls | да | H2 удалён из Xray-core, мапится на XHTTP `stream-one`; сервер должен быть XHTTP |
 
 ## Быстрый старт на MikroTik
 
@@ -42,15 +55,14 @@ Docker Hub: [`aznka/xray-vless-mikrotik-arm64`](https://hub.docker.com/r/aznka/x
 Дальше направьте нужный трафик в таблицу `vless` через `/routing/rule` или mangle `mark-routing`.
 Синтаксис `/container` немного различается между версиями RouterOS 7.x — сверяйтесь с документацией своей версии.
 
-Логи: `/log print where topics~"container"`
+Логи: `/log print where topics~"container"`. В баннере при старте видны версия, транспорт и первые символы UUID.
 
-> **Важно:** значение `VLESS_URL` должно содержать ссылку `vless://…`. Начиная с 3.3.2 пробелы,
-> кавычки и невидимые символы вокруг ссылки отбрасываются автоматически.
+> Пробелы, кавычки и невидимые символы вокруг ссылки в `VLESS_URL` отбрасываются автоматически (с 3.3.2).
 
 ### Примеры ссылок
 
 ```
-# XHTTP + Reality
+# XHTTP + Reality (рекомендуется)
 vless://UUID@server:443?type=xhttp&security=reality&pbk=KEY&fp=chrome&sni=example.com&sid=SHORTID&path=/&mode=auto
 
 # gRPC + Reality
@@ -68,7 +80,7 @@ vless://UUID@server:443?type=tcp&security=reality&flow=xtls-rprx-vision&pbk=KEY&
 | `TUN` | `tun0` | Имя TUN-интерфейса (уникальное для каждого контейнера) |
 | `MTU` | `9000` | MTU TUN-интерфейса |
 | `IPV4` / `IPV6` | `198.18.0.1` / — | Адреса TUN |
-| `MARK` | `438` | fwmark для трафика socks5 |
+| `MARK` | `438` | fwmark для сокетов hev-socks5-tunnel (`0` — не выставлять) |
 | `SOCKS_PORT` | `1080` | Внутренний порт SOCKS5 |
 | `SOCKS5_UDP_MODE` | `udp` | Режим UDP в hev-socks5-tunnel |
 | `GATEWAY` | автоопределение | Шлюз контейнера |
@@ -79,12 +91,18 @@ vless://UUID@server:443?type=tcp&security=reality&flow=xtls-rprx-vision&pbk=KEY&
 `SERVER_NAME`, `FINGER_PRINT`, `PUBLIC_KEY`, `SHORT_ID`, `SPIDERX`, `XHTTP_PATH`, `XHTTP_MODE`,
 `GRPC_SERVICE_NAME`, `GRPC_MULTI_MODE`, `GRPC_AUTHORITY`.
 
-## Сборка
+## Сборка и тесты
 
 ```
+docker buildx build --platform linux/arm64 -t xray-test --load .
+docker run --rm --platform linux/arm64 --entrypoint xray-config-test xray-test
+
 docker buildx build --platform linux/arm64 --provenance=false --sbom=false \
   -t aznka/xray-vless-mikrotik-arm64:dev --push .
 ```
+
+Версия ядра задаётся `--build-arg XRAY_VERSION=…`, hev-socks5-tunnel — `--build-arg HEV_VERSION=…`.
+`xray-config-test` генерирует конфиг для каждого транспорта и проверяет его через `xray run -test`.
 
 ## Changelog
 
